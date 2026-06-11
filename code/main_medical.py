@@ -9,9 +9,9 @@ import torch.nn.functional as F
 import itertools as it
 import matplotlib.pyplot as plt
 
-from code.model import RAGCN
-from code.utils import accuracy, load_data_medical, encode_onehot_torch, class_f1, auc_score
-from code.model import my_sigmoid
+from model import RAGCN
+from utils import accuracy, load_data_medical, encode_onehot_torch, class_f1, auc_score
+from model import my_sigmoid
 
 
 def train():

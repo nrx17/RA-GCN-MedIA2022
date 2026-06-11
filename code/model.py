@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from code.layer import GraphConvolution
+from layer import GraphConvolution
 
 
 def my_sigmoid(mx, dim):

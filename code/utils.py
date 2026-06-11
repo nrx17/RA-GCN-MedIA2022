@@ -43,7 +43,7 @@ def load_data_medical(dataset_addr, train_ratio, test_ratio=0.2):
     adj= dict()
     adj['D'] = adj_D
 
-    features = features.astype(np.float)
+    features = features.astype(np.float64)
     features = fill_features(features)
 
     idx_train, idx_test = train_test_split(range(n_node), test_size=test_ratio, random_state=42, stratify=labels)
