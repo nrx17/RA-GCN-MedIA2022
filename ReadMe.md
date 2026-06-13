@@ -80,3 +80,61 @@ Please cite our paper if you use this code in your own work:
   publisher={Elsevier}
 }
 ```
+## Reproduction Notes
+
+This fork was tested on Windows using Python 3.10.
+
+### Modifications
+
+The following changes were required to run the code successfully on a modern Python environment:
+
+* Fixed import statements that conflicted with Python's built-in `code` module:
+
+  * `from code.model` → `from model`
+  * `from code.utils` → `from utils`
+  * `from code.layer` → `from layer`
+* Replaced deprecated NumPy usage:
+
+  * `np.float` → `np.float64`
+* Added a synthetic dataset generation script (`generate_dataset.py`) to create the dataset expected by the implementation.
+
+### Synthetic Dataset
+
+Generated dataset:
+
+* Number of nodes: 1000
+* Number of features: 20
+* Graph construction features: 10
+* Node features: 10
+* Majority class ratio: 90%
+* Graph threshold: 0.5
+
+Dataset file:
+
+```text
+data/synthetic/per-90gt-0.5.pkl
+```
+
+### Experimental Results
+
+Model: RA-GCN
+
+Results obtained after training:
+
+| Metric    | Value  |
+| --------- | ------ |
+| Accuracy  | 0.9200 |
+| Macro F1  | 0.7778 |
+| Binary F1 | 0.6000 |
+| ROC-AUC   | 0.9064 |
+
+Training output:
+
+```text
+acc test : 0.92
+f1Macro test : 0.7777777777777778
+f1Binary test : 0.6
+AUC test : 0.9063580739558393
+```
+
+These results were obtained using the generated synthetic dataset and may differ from the values reported in the paper because the original synthetic datasets were not included in the repository.
