@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<!-- saved from url=(0041)http://www.nkrow.ru/video-s-mk-kati-upit/ -->
-<html>
-<head>
-<meta name="google-site-verification" content="0gI6D09ik5hioXs_Woxg6-XM_cV9TqV8BslqaNoSqgs" />
-</head>
-</html>
-  
 RA-GCN: Graph Convolutional Network for Disease Prediction Problems with Imbalanced Data
 ====
 
@@ -80,61 +72,136 @@ Please cite our paper if you use this code in your own work:
   publisher={Elsevier}
 }
 ```
-## Reproduction Notes
+
+My implementation:
+Reproduction Notes
+------------------
 
 This fork was tested on Windows using Python 3.10.
 
-### Modifications
+Compatibility Updates
+------------------
 
-The following changes were required to run the code successfully on a modern Python environment:
+The original implementation required several modifications to run successfully on a modern Python environment.
 
-* Fixed import statements that conflicted with Python's built-in `code` module:
+The following changes were made:
 
-  * `from code.model` → `from model`
-  * `from code.utils` → `from utils`
-  * `from code.layer` → `from layer`
-* Replaced deprecated NumPy usage:
+- Fixed import statements that conflicted with Python's built-in `code` module:
+  - from code.model → from model
+  - from code.utils → from utils
+  - from code.layer → from layer
 
-  * `np.float` → `np.float64`
-* Added a synthetic dataset generation script (`generate_dataset.py`) to create the dataset expected by the implementation.
+- Replaced deprecated NumPy usage:
+  - np.float → np.float64
 
-### Synthetic Dataset
+- Added a synthetic dataset generation script (generate_dataset.py) to recreate the dataset expected by the implementation.
 
-Generated dataset:
+Synthetic Dataset
+------------------
 
-* Number of nodes: 1000
-* Number of features: 20
-* Graph construction features: 10
-* Node features: 10
-* Majority class ratio: 90%
-* Graph threshold: 0.5
+Since the original synthetic datasets were not included in the repository, a synthetic dataset was generated with the following characteristics:
+
+- Number of nodes: 1000
+- Number of features: 20
+- Graph construction features: 10
+- Node features: 10
+- Majority class ratio: 90%
+- Graph threshold: 0.5
 
 Dataset file:
 
-```text
 data/synthetic/per-90gt-0.5.pkl
-```
 
-### Experimental Results
+Results on Synthetic Dataset
+------------------
 
 Model: RA-GCN
 
-Results obtained after training:
-
-| Metric    | Value  |
-| --------- | ------ |
-| Accuracy  | 0.9200 |
-| Macro F1  | 0.7778 |
+| Metric | Value |
+|---------|--------|
+| Accuracy | 0.9200 |
+| Macro F1 | 0.7778 |
 | Binary F1 | 0.6000 |
-| ROC-AUC   | 0.9064 |
+| ROC-AUC | 0.9064 |
 
 Training output:
 
-```text
 acc test : 0.92
+
 f1Macro test : 0.7777777777777778
+
 f1Binary test : 0.6
+
 AUC test : 0.9063580739558393
-```
 
 These results were obtained using the generated synthetic dataset and may differ from the values reported in the paper because the original synthetic datasets were not included in the repository.
+
+OASIS Alzheimer's Disease Experiment
+------------------
+
+To evaluate the adaptability of RA-GCN to a real-world medical dataset, the model was applied to the OASIS Longitudinal MRI Dataset.
+
+Dataset Preparation
+------------------
+
+Label definition:
+
+- CDR = 0 → Nondemented
+- CDR > 0 → Demented
+
+Graph construction feature:
+
+- MMSE (Mini-Mental State Examination)
+
+Node features:
+
+- Age
+- EDUC
+- SES
+- Sex
+- eTIV
+- nWBV
+- ASF
+
+Preprocessing:
+
+- Missing SES values were imputed using the median
+- Features were standardized using z-score normalization
+- A binary graph was generated using MMSE similarity
+
+Dataset file:
+
+data/oasis/oasis_data.pkl
+
+Dataset Statistics
+------------------
+
+- Number of nodes: 371
+- Number of features: 7
+- Class distribution:
+  - Nondemented: 206
+  - Demented: 165
+
+Results on OASIS Dataset
+------------------
+
+Model: RA-GCN
+
+| Metric | Value |
+|---------|--------|
+| Accuracy | 0.8800 |
+| Macro F1 | 0.8768 |
+| Binary F1 | 0.8571 |
+| ROC-AUC | 0.9188 |
+
+Training output:
+
+acc test : 0.88
+
+f1Macro test : 0.8768472906403941
+
+f1Binary test : 0.8571428571428571
+
+AUC test : 0.9188311688311689
+
+These results demonstrate that the implementation can be adapted to Alzheimer's disease classification using the OASIS dataset with minimal modifications to the original framework.
