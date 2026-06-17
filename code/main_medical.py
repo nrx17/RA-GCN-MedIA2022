@@ -1,6 +1,7 @@
 import os
 import time
 import argparse
+from datetime import datetime
 
 import torch
 seed_num = 17
@@ -46,7 +47,7 @@ def train():
         
         # Train optimization components jointly
         model.run_both(epoch_for_D=args.epoch_D, epoch_for_W=args.epoch_W, labels_one_hot=labels_one_hot[idx_train, :],
-                       samples=idx_train, args_cuda=use_cuda, equal_weights=False)
+                        samples=idx_train, args_cuda=use_cuda, equal_weights=False)
 
         model.eval()
         
@@ -181,9 +182,13 @@ def save_evaluation_dashboard(probs, max_val):
     ax_roc.legend(loc="lower right", fontsize=10)
     ax_roc.grid(True, linestyle=':', alpha=0.6)
 
-    # Export unique visualization using dynamic filename
+    # Route output folder cleanly and append timestamp string
+    output_dir = "results_dashboard"
+    os.makedirs(output_dir, exist_ok=True)
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = os.path.join(output_dir, f"{dataset_name}_evaluation_dashboard_{timestamp_str}.png")
+    
     plt.tight_layout()
-    output_filename = f"{dataset_name}_evaluation_dashboard.png"
     plt.savefig(output_filename, bbox_inches='tight', dpi=300)
     plt.close()
     print(f"\n[Dashboard Saved Successfully] -> Finished exporting {output_filename}.")

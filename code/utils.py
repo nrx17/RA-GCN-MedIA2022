@@ -4,6 +4,8 @@ import torch
 import networkx as nx
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import pickle
 
 
@@ -40,11 +42,30 @@ def load_data_medical(dataset_addr, train_ratio, test_ratio=0.2):
     adj_D = normalize(adj + sp.eye(adj.shape[0]))
     adj_W = normalize(adj + sp.eye(adj.shape[0]))
 
-    adj= dict()
+    adj = dict()
     adj['D'] = adj_D
 
     features = features.astype(np.float64)
     features = fill_features(features)
+
+    # =========================================================================
+    # OPTIONAL AUTOMATED PCA INJECTION FOR HIGH-FEATURE ENVIRONMENT STABILITY
+    # =========================================================================
+    initial_feature_count = features.shape[1]
+    if initial_feature_count > 10:
+        target_components = 5
+        print(f"[PCA Preprocessing] High feature dimensions detected ({initial_feature_count} features).")
+        print(f"                     Applying PCA transformation down to {target_components} principal components...")
+        
+        # Scale features first so variance is equally weighted across components
+        scaler = StandardScaler()
+        scaled_features = scaler.fit_transform(features)
+        
+        # Fit and transform the high-dimensional patient vectors
+        pca = PCA(n_components=target_components, random_state=42)
+        features = pca.fit_transform(scaled_features)
+        print(f"[PCA Preprocessing] Variance captured: {sum(pca.explained_variance_ratio_):.4f}")
+    # =========================================================================
 
     idx_train, idx_test = train_test_split(range(n_node), test_size=test_ratio, random_state=42, stratify=labels)
     idx_train, idx_val = train_test_split(idx_train, train_size=train_ratio/(1-test_ratio), random_state=42, stratify=labels[idx_train])

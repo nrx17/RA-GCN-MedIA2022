@@ -13,6 +13,7 @@ import os
 import sys
 import argparse
 import warnings
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -169,30 +170,38 @@ def apply_smote(X_train, y_train):
 # --------------------------------------------------------------------------- #
 # Plotting
 # --------------------------------------------------------------------------- #
-def plot_roc_curves(dataset_name, fitted_models, X_test, y_test, output_dir):
-    """Save a publication-ready ROC plot comparing the SMOTE-boosted models."""
-    plt.figure(figsize=(7, 6), dpi=300)
+def plot_roc_curves(dataset_name, fitted_models, X_test, y_test, output_dir, timestamp):
+    """Save a publication-ready ROC plot comparing the SMOTE-boosted models with detailed metrics."""
+    plt.figure(figsize=(8.5, 6.5), dpi=300)
     colors = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e"]
 
     for (model_name, model), color in zip(fitted_models.items(), colors):
         y_score = model.predict_proba(X_test)[:, 1]
-        fpr, tpr, _ = roc_curve(y_test, y_score)
+        y_pred = model.predict(X_test)
+        
+        # Calculate cross-evaluation markers for legend expansion
+        acc_val = accuracy_score(y_test, y_pred)
+        f1_mac = f1_score(y_test, y_pred, average="macro", zero_division=0)
         auc_val = roc_auc_score(y_test, y_score)
-        plt.plot(fpr, tpr, color=color, linewidth=2,
-                  label=f"{model_name} (AUC = {auc_val:.3f})")
+        
+        fpr, tpr, _ = roc_curve(y_test, y_score)
+        label_text = f"{model_name:<20} [AUC={auc_val:.3f}, Acc={acc_val:.3f}, F1={f1_mac:.3f}]"
+        plt.plot(fpr, tpr, color=color, linewidth=2, label=label_text)
 
     plt.plot([0, 1], [0, 1], linestyle="--", color="gray", linewidth=1, label="Chance")
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel("False Positive Rate", fontsize=12)
     plt.ylabel("True Positive Rate", fontsize=12)
-    plt.title(f"ROC Curves – SMOTE-Boosted Traditional Models\n({dataset_name.upper()})", fontsize=13)
-    plt.legend(loc="lower right", fontsize=9, frameon=True)
+    plt.title(f"ROC Curves (SMOTE) – Traditional Baselines\nDataset: {dataset_name.upper()}", fontsize=13, pad=10)
+    
+    # Using a monospace font style makes alignment of multiple metrics uniform in legends
+    plt.legend(loc="lower right", fontsize=8, frameon=True, prop={'family': 'monospace', 'size': 8})
     plt.grid(alpha=0.3)
     plt.tight_layout()
 
     os.makedirs(output_dir, exist_ok=True)
-    out_path = os.path.join(output_dir, f"{dataset_name}_traditional_roc_smote.png")
+    out_path = os.path.join(output_dir, f"{dataset_name}_traditional_roc_smote_{timestamp}.png")
     plt.savefig(out_path, dpi=300, bbox_inches="tight")
     plt.close()
     print(f"[Plot Saved Successfully] -> Finished exporting {out_path}")
@@ -201,13 +210,13 @@ def plot_roc_curves(dataset_name, fitted_models, X_test, y_test, output_dir):
 # --------------------------------------------------------------------------- #
 # Per-dataset pipeline
 # --------------------------------------------------------------------------- #
-def benchmark_dataset(path, output_dir):
+def benchmark_dataset(path, output_dir, timestamp):
     dataset_name = os.path.splitext(os.path.basename(path))[0]
     
     X, y, idx_train, idx_val, idx_test = load_dataset_splits(path)
     is_binary = len(np.unique(y)) == 2
 
-    # Fixed: Match the exact 60% training split used by RA-GCN
+    # Match the exact training split configuration used by RA-GCN
     X_train_raw, y_train_raw = X[idx_train], y[idx_train]
     X_test, y_test = X[idx_test], y[idx_test]
 
@@ -232,7 +241,7 @@ def benchmark_dataset(path, output_dir):
     all_results.extend(smote_results)
 
     if is_binary:
-        plot_roc_curves(dataset_name, smote_models, X_test, y_test, output_dir)
+        plot_roc_curves(dataset_name, smote_models, X_test, y_test, output_dir, timestamp)
 
     return pd.DataFrame(all_results)
 
@@ -240,14 +249,21 @@ def benchmark_dataset(path, output_dir):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, required=True, help="Path to the dataset file.")
-    parser.add_argument('--output-dir', default=".", help="Directory to save artifacts.")
+    # Redirect default path out of root into a dedicated folder
+    parser.add_argument('--output-dir', default="results_dashboard", help="Directory to save artifacts.")
     args = parser.parse_args()
 
-    df_results = benchmark_dataset(args.dataset, args.output_dir)
+    # Generate isolated clean script timestamp
+    runtime_timestamp = datetime.now().strftime("%Y%mdd_%H%M%S")
+
+    df_results = benchmark_dataset(args.dataset, args.output_dir, runtime_timestamp)
     
-    # Save individual dataframe output as a backup csv
+    # Save individual dataframe output as a backup csv within target directory
     dataset_name = os.path.splitext(os.path.basename(args.dataset))[0]
-    df_results.to_csv(f"{dataset_name}_traditional_metrics.csv", index=False)
+    os.makedirs(args.output_dir, exist_ok=True)
+    csv_out_path = os.path.join(args.output_dir, f"{dataset_name}_traditional_metrics_{runtime_timestamp}.csv")
+    df_results.to_csv(csv_out_path, index=False)
+    print(f"[Metrics Saved Successfully] -> Finished exporting {csv_out_path}")
 
 
 if __name__ == "__main__":
